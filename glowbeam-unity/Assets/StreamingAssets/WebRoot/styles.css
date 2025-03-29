@@ -1,0 +1,55 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    color: #eeeeee;
+    font-family: sans-serif;
+  }
+  
+  .container {
+    max-width: 600px;
+    margin: 50px auto;
+    text-align: center;
+  }
+  
+  h1 {
+    margin-bottom: 20px;
+  }
+  
+  .button-row {
+    margin: 15px 0;
+  }
+  
+  button {
+    background-color: #444;
+    color: #eee;
+    border: none;
+    padding: 10px 20px;
+    margin: 0 5px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  
+  button:hover {
+    background-color: #666;
+  }
+  
+  button:disabled {
+    background-color: #333;
+    color: #777;
+    cursor: default;
+  }
+  
+  #scanImageContainer {
+    margin: 20px 0;
+  }
+  
+  #scanImage {
+    max-width: 400px;
+    max-height: 300px;
+    display: block;
+    margin: 0 auto;
+    border: 1px solid #666;
+    background-color: #222;
+  }
+  
