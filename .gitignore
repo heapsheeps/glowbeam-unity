@@ -1,6 +1,8 @@
 # This .gitignore file should ensure that unnecessary files are not tracked by Git,
 # while keeping the important ones like source files, assets, and .meta files.
 
+build*/
+
 # Ignore large directories that are unnecessary
 [Ll]ibrary/
 [Tt]emp/

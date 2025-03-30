@@ -16,6 +16,8 @@ public class WebServerManager : MonoBehaviour
     private WebServer _webServer;
     private Thread _webServerThread;
     private CancellationTokenSource _cancellationTokenSource;
+
+    // We’ll store the final folder path we serve from
     private string _htmlRootPath;
 
     private void Awake()
@@ -29,13 +31,28 @@ public class WebServerManager : MonoBehaviour
         DontDestroyOnLoad(this.gameObject);
 
         LogManager.Log(LogLevel.Info, "WebServerManager initialized.");
-
-        // Build path to your StreamingAssets for the static site
-        _htmlRootPath = Path.Combine(Application.streamingAssetsPath, "WebRoot");
     }
 
     private void Start()
     {
+        // On Android, copy from StreamingAssets to persistentDataPath.
+        // Else, just use the normal path in StreamingAssets/WebRoot.
+#if UNITY_ANDROID
+        // Copy the entire "WebRoot" folder from streaming assets to persistentDataPath
+        // so EmbedIO can read from an actual filesystem location.
+        string localFolder = Path.Combine(Application.persistentDataPath, "WebRoot");
+        if (!Directory.Exists(localFolder))
+            Directory.CreateDirectory(localFolder);
+
+        // Copy synchronously here for simplicity. If your project is large, consider doing this in a coroutine.
+        CopyWebRootToPersistentDataPath("WebRoot", localFolder);
+
+        _htmlRootPath = localFolder;
+#else
+        // Non-Android: we can serve directly from StreamingAssets
+        _htmlRootPath = Path.Combine(Application.streamingAssetsPath, "WebRoot");
+#endif
+
         StartServer();
     }
 
@@ -75,7 +92,6 @@ public class WebServerManager : MonoBehaviour
             _cancellationTokenSource.Cancel();
             if (_webServerThread != null && _webServerThread.IsAlive)
             {
-                // Wait for the background thread to finish
                 _webServerThread.Join();
                 _webServerThread = null;
             }
@@ -87,7 +103,6 @@ public class WebServerManager : MonoBehaviour
 
     private WebServer CreateWebServer(int port)
     {
-        // Using a simple console logger as an example
         return new WebServer(o => o
                 .WithUrlPrefix($"http://*:{port}/")
                 .WithMode(HttpListenerMode.EmbedIO))
@@ -104,4 +119,62 @@ public class WebServerManager : MonoBehaviour
                 return Task.CompletedTask;
             }));
     }
+
+#if UNITY_ANDROID
+    /// <summary>
+    /// Copies the files from StreamingAssets/WebRoot into persistentDataPath/WebRoot,
+    /// so EmbedIO can serve them from a real filesystem path on Android.
+    /// </summary>
+    private void CopyWebRootToPersistentDataPath(string sourceDirName, string destDirName)
+    {
+        // For demonstration, let's assume we have a known list of files, or a small set.
+        // If you have subfolders or multiple files, adapt accordingly.
+        // If you want to do this dynamically, you'll need a manifest or a known set of files.
+
+        string[] files = { "index.html", "styles.css", "scripts.js" };
+        
+        foreach (var file in files)
+        {
+            // Build the streaming assets path
+            string streamingPath = Path.Combine(Application.streamingAssetsPath, sourceDirName);
+            streamingPath = Path.Combine(streamingPath, file);
+
+            // On Android, streamingPath likely has jar:file://..., so we use UnityWebRequest
+            if (streamingPath.Contains("://"))
+            {
+                // Copy using UnityWebRequest synchronously for demonstration:
+                var request = UnityEngine.Networking.UnityWebRequest.Get(streamingPath);
+                var op = request.SendWebRequest();
+                while (!op.isDone) { }
+
+#if UNITY_2020_2_OR_NEWER
+                if (request.result == UnityEngine.Networking.UnityWebRequest.Result.ConnectionError
+                    || request.result == UnityEngine.Networking.UnityWebRequest.Result.ProtocolError)
+#else
+                if (request.isNetworkError || request.isHttpError)
+#endif
+                {
+                    Debug.LogError($"Failed to copy {streamingPath}: {request.error}");
+                    continue;
+                }
+
+                byte[] data = request.downloadHandler.data;
+                string outFile = Path.Combine(destDirName, file);
+                File.WriteAllBytes(outFile, data);
+            }
+            else
+            {
+                // On desktop (unlikely to hit this block in #if UNITY_ANDROID, but just in case)
+                if (!File.Exists(streamingPath))
+                {
+                    Debug.LogWarning($"[CopyWebRootToPersistentDataPath] File not found: {streamingPath}");
+                    continue;
+                }
+                byte[] data = File.ReadAllBytes(streamingPath);
+                string outFile = Path.Combine(destDirName, file);
+                File.WriteAllBytes(outFile, data);
+            }
+        }
+    }
+#endif
 }

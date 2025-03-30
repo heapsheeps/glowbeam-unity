@@ -1,0 +1,3 @@
+/Users/kevin/Code/glowbeam/glowbeam-unity/glowbeam-unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/CMakeLists.txt
+/Users/kevin/Code/glowbeam/glowbeam-unity/glowbeam-unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/FramePacing/CMakeLists.txt
+/Users/kevin/Code/glowbeam/glowbeam-unity/glowbeam-unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/GameActivity/CMakeLists.txt
